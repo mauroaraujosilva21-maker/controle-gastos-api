@@ -1,30 +1,38 @@
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ControleGastos.Models
 {
-    // Define os dois tipos possíveis de transação que o sistema aceita
-    public enum TipoTransacao
-    {
-        Despesa,
-        Receita
-    }
-
+    [Table("Transacoes")]
     public class Transacao
     {
-        // Identificador único da transação gerado automaticamente
+        [Key]
+        [Column(TypeName = "uuid")]
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        // O que é a transação (ex: "Compras do mês", "Salário")
+        [Required]
         public string Descricao { get; set; } = string.Empty;
 
-        // Valor em dinheiro da transação
+        [Required]
         public decimal Valor { get; set; }
 
-        // Guarda se é Despesa ou Receita
+        [Required]
         public TipoTransacao Tipo { get; set; }
 
-        // CHAVE ESTRANGEIRA: Guarda o ID da pessoa que fez essa transação.
-        // É através daqui que o banco sabe a quem pertence esse gasto/ganho.
+        // 🌟 AQUI ESTÁ A CHAVE: Força o EF a usar a coluna certa sem criar "PessoaId1"
+        [Required]
+        [ForeignKey("Pessoa")]
+        [Column("PessoaId", TypeName = "uuid")]
         public Guid PessoaId { get; set; }
+
+        // Propriedade de navegação inversa
+        public virtual Pessoa? Pessoa { get; set; }
+    }
+
+    public enum TipoTransacao
+    {
+        Receita = 0,
+        Despesa = 1
     }
 }

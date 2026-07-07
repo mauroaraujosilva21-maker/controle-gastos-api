@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ControleGastos.Migrations
 {
     /// <inheritdoc />
-    public partial class InicializarBanco : Migration
+    public partial class SistemaFinalUUID : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,9 +15,9 @@ namespace ControleGastos.Migrations
                 name: "Pessoas",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Nome = table.Column<string>(type: "TEXT", nullable: false),
-                    Idade = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Nome = table.Column<string>(type: "text", nullable: false),
+                    Idade = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -28,11 +28,12 @@ namespace ControleGastos.Migrations
                 name: "Transacoes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Descricao = table.Column<string>(type: "TEXT", nullable: false),
-                    Valor = table.Column<decimal>(type: "TEXT", nullable: false),
-                    Tipo = table.Column<int>(type: "INTEGER", nullable: false),
-                    PessoaId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Descricao = table.Column<string>(type: "text", nullable: false),
+                    Valor = table.Column<decimal>(type: "numeric", nullable: false),
+                    Tipo = table.Column<int>(type: "integer", nullable: false),
+                    PessoaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PessoaId1 = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -43,12 +44,22 @@ namespace ControleGastos.Migrations
                         principalTable: "Pessoas",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Transacoes_Pessoas_PessoaId1",
+                        column: x => x.PessoaId1,
+                        principalTable: "Pessoas",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Transacoes_PessoaId",
                 table: "Transacoes",
                 column: "PessoaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transacoes_PessoaId1",
+                table: "Transacoes",
+                column: "PessoaId1");
         }
 
         /// <inheritdoc />

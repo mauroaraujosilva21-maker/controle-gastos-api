@@ -4,7 +4,7 @@ import './App.css';
 
 // Configuração da URL padrão do seu back-end C#
 // Nota: Verifique no seu arquivo launchSettings.json ou no terminal do C# se a porta é 5000 ou outra.
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://localhost:5078/api';
 
 function App() {
   // Estados para armazenar os dados vindos do banco
@@ -70,11 +70,10 @@ function App() {
   await axios.post(`${API_URL}/transacoes`, {
     descricao: descricaoTransacao,
     valor: parseFloat(valorTransacao),
-    // Se for 0 vira 1, se for qualquer outra coisa vira 0 (Inversão Mágica)
-    tipo: parseInt(tipoTransacao) === 0 ? 1 : 0, 
+    tipo: parseInt(tipoTransacao), // <--- REMOVA A INVERSÃO MÁGICA. DEIXE APENAS ISSO!
     pessoaId: pessoaIdTransacao
   });
-      setDescricaoTransacao('');
+  setDescricaoTransacao('');
       setValorTransacao('');
       carregarDados(); // Atualiza a tela e os relatórios automaticamente
     } catch (err) {

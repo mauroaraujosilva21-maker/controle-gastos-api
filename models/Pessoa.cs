@@ -1,18 +1,22 @@
 using System;
+using System.Collections.Generic; // Adicionado para suportar a ICollection
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ControleGastos.Models
 {
-    // Esta classe define como uma "Pessoa" será salva no nosso sistema
+    [Table("Pessoas")]
     public class Pessoa
     {
-        // O ID é o identificador único. O 'Guid' gera um código único automático 
-        // parecido com isso: 123e4567-e89b-12d3-a456-426614174000
+        [Key]
+        [Column(TypeName = "uuid")]
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        // Armazena o nome da pessoa (começa com um texto vazio de padrão)
         public string Nome { get; set; } = string.Empty;
 
-        // Armazena a idade da pessoa
         public int Idade { get; set; }
+
+        // 🌟 ADICIONE ESTA LINHA AQUI EMBAIXO PARA CRIAR A CONEXÃO COM AS TRANSAÇÕES:
+        public virtual ICollection<Transacao> Transacoes { get; set; } = new List<Transacao>();
     }
 }

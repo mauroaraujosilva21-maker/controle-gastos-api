@@ -7,24 +7,19 @@ namespace ControleGastos.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        // Tabelas do nosso banco de dados
         public DbSet<Pessoa> Pessoas { get; set; }
-        public DbSet<Transacao> Transacoes { get; set; } // Nova tabela adicionada!
+        public DbSet<Transacao> Transacoes { get; set; }
 
-        // Esta função serve para configurar regras mais avançadas do banco de dados
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // CONFIGURAÇÃO DA DELEÇÃO EM CASCATA:
-            // Estamos dizendo que: Uma Transação tem UMA Pessoa, e uma Pessoa pode ter MUITAS Transações.
-            // A ligação é feita pelo 'PessoaId'. Se a Pessoa for deletada, DeleteBehavior.Cascade
-            // se encarrega de apagar automaticamente todas as transações ligadas a ela.
-            modelBuilder.Entity<Transacao>()
-                .HasOne<Pessoa>()
-                .WithMany()
-                .HasForeignKey(t => t.PessoaId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             base.OnModelCreating(modelBuilder);
+
+            // Força o relacionamento perfeito sem colunas fantasmas
+            modelBuilder.Entity<Transacao>()
+                .HasOne(t => t.Pessoa)
+                .WithMany(p => p.Transacoes)
+                .HasForeignKey(t => t.PessoaId)
+                .OnDelete(DeleteBehavior.Cascade); // Se deletar a pessoa, apaga as transações dela
         }
     }
 }

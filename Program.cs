@@ -16,11 +16,14 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+});
 
-// Configuração do Banco de Dados SQLite
+// Configuração do Banco de Dados PostgreSQL (Supabase)
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
@@ -37,7 +40,7 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<ControleGastos.Data.AppDbContext>();
     
     // ATENÇÃO: Adicione esta linha logo acima do EnsureCreated
-    dbContext.Database.EnsureDeleted(); // Apaga o banco fantasma ou incompleto que ele achar
+
     dbContext.Database.EnsureCreated(); // Cria um banco 100% novo com Pessoas e Transacoes
 }
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ControleGastos.Data;
 using ControleGastos.Models;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace ControleGastos.Controllers
 {
@@ -52,6 +53,41 @@ namespace ControleGastos.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(Listar), new { id = transacao.Id }, transacao);
+        }
+
+        // 3. NOVO REQUISITO: ENGENHARIA DOS TOTAIS DA CASA E POR PESSOA
+        // Acessível via HTTP GET: api/transacoes/totais
+        [HttpGet("totais")]
+        public async Task<IActionResult> ObterTotaisPainel()
+        {
+            // 1. Puxa as transações do banco para calcular o Total Geral acumulado da Casa
+            var todasTransacoes = await _context.Transacoes.ToListAsync();
+            
+            var totalReceitasCasa = todasTransacoes.Where(t => t.Tipo == TipoTransacao.Receita).Sum(t => t.Valor);
+            var totalDespesasCasa = todasTransacoes.Where(t => t.Tipo == TipoTransacao.Despesa).Sum(t => t.Valor);
+            var saldoGeralCasa = totalReceitasCasa - totalDespesasCasa;
+
+            // 2. Busca as pessoas trazendo suas respectivas transações de forma limpa
+            var pessoasDoBanco = await _context.Pessoas.Include(p => p.Transacoes).ToListAsync();
+            
+            var resumoPessoas = pessoasDoBanco.Select(p => new
+            {
+                PessoaId = p.Id,
+                Nome = p.Nome,
+                Receitas = p.Transacoes.Where(t => t.Tipo == TipoTransacao.Receita).Sum(t => t.Valor),
+                Despesas = p.Transacoes.Where(t => t.Tipo == TipoTransacao.Despesa).Sum(t => t.Valor),
+                Saldo = p.Transacoes.Where(t => t.Tipo == TipoTransacao.Receita).Sum(t => t.Valor) - 
+                        p.Transacoes.Where(t => t.Tipo == TipoTransacao.Despesa).Sum(t => t.Valor)
+            }).ToList();
+
+            // 3. Retorna o payload estruturado para alimentar os cards superiores e a tabela do React
+            return Ok(new
+            {
+                TotalReceitasCasa = totalReceitasCasa,
+                TotalDespesasCasa = totalDespesasCasa,
+                SaldoGeralCasa = saldoGeralCasa,
+                Pessoas = resumoPessoas
+            });
         }
     }
 }

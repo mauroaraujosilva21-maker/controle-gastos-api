@@ -2,8 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ControleGastos.Data;
 using ControleGastos.Models;
-using ControleGastos.DTOs; // Importa o formato de relatório que criamos
+using ControleGastos.DTOs;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -54,45 +55,36 @@ namespace ControleGastos.Controllers
         }
 
         // 4. REQUISITO: CONSULTA DE TOTAIS
-        // Acessível via HTTP GET: api/pessoas/totais
         [HttpGet("totais")]
         public async Task<IActionResult> ObterTotais()
         {
-            // Busca todas as pessoas e todas as transações do banco
-            var pessoas = await _context.Pessoas.ToListAsync();
-            var transacoes = await _context.Transacoes.ToListAsync();
+            var pessoas = await _context.Pessoas
+                .Include(p => p.Transacoes)
+                .ToListAsync();
 
-            // Cria o objeto principal do relatório que vamos preencher
             var relatorio = new RelatorioTotaisDto();
 
-            // Passa de pessoa em pessoa calculando os totais individuais
             foreach (var pessoa in pessoas)
             {
-                // Filtra as transações que pertencem a ESTA pessoa específica
-                var transacoesDaPessoa = transacoes.Where(t => t.PessoaId == pessoa.Id).ToList();
+                var transacoesDaPessoa = pessoa.Transacoes ?? new List<Transacao>();
 
-                // Soma as receitas e despesas dela
                 var totalReceitas = transacoesDaPessoa.Where(t => t.Tipo == TipoTransacao.Receita).Sum(t => t.Valor);
                 var totalDespesas = transacoesDaPessoa.Where(t => t.Tipo == TipoTransacao.Despesa).Sum(t => t.Valor);
 
-                // Monta o resumo individual da pessoa
                 var resumoPessoa = new ResumoPessoaDto
                 {
                     PessoaId = pessoa.Id,
-                    Nome = pessoa.Nome,
+                    Nome = pessoa.Nome ?? "",
                     TotalReceitas = totalReceitas,
                     TotalDespesas = totalDespesas
                 };
 
-                // Adiciona o resumo desta pessoa na lista do relatório
                 relatorio.DetalhesPorPessoa.Add(resumoPessoa);
 
-                // Acumula os valores para o Total Geral da casa
                 relatorio.TotalGeralReceitas += totalReceitas;
                 relatorio.TotalGeralDespesas += totalDespesas;
             }
 
-            // Retorna o relatório completo montado
             return Ok(relatorio);
         }
     }
