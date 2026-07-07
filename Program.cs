@@ -4,13 +4,13 @@ using ControleGastos.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================
-// 1. CONFIGURAÇÃO DO CORS (LIBERAÇÃO PARA O REACT)
+// 1. CONFIGURAÇÃO DO CORS (LIBERADO PARA TUDO NO DEPLOY)
 // ==========================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // URL padrão do Vite/React
+        policy.AllowAnyOrigin() // Permite que o seu React na nuvem consiga acessar aqui
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -21,6 +21,10 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
 });
 
+// Configuração do Swagger (Adicionando os serviços necessários)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 // Configuração do Banco de Dados PostgreSQL (Supabase)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -28,9 +32,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var app = builder.Build();
 
 // ==========================================
-// 2. ATIVAÇÃO DO CORS
+// 2. ATIVAÇÃO DO SWAGGER (SOLTO PARA FUNCIONAR NA RENDER)
 // ==========================================
-app.UseCors("AllowReact"); // Ativa a permissão antes dos outros mapeamentos
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ControleGastos API v1");
+    c.RoutePrefix = "swagger"; // Força a rota a ser exatamente /swagger
+});
+
+// Ativa a permissão antes dos outros mapeamentos
+app.UseCors("AllowReact"); 
 
 app.UseAuthorization();
 app.MapControllers();
@@ -38,9 +50,6 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ControleGastos.Data.AppDbContext>();
-    
-    // ATENÇÃO: Adicione esta linha logo acima do EnsureCreated
-
     dbContext.Database.EnsureCreated(); // Cria um banco 100% novo com Pessoas e Transacoes
 }
 
