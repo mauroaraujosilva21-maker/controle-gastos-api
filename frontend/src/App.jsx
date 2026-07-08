@@ -106,12 +106,20 @@ function App() {
 
   // Handler para deletar uma pessoa (Garante a deleção em cascata)
   const handleDeletarPessoa = async (id) => {
+    if (!id) return alert("ID da pessoa não encontrado!");
+    
     if (confirm("Tem certeza que deseja deletar esta pessoa? Todas as transações dela serão apagadas!")) {
       try {
-        await axios.delete(`${API_URL}/pessoas/${id}`);
-        await carregarDados();
+        // Envia o ID na rota padrão (Convertendo explicitamente para string se necessário)
+        await axios.delete(`${API_URL}/pessoas/${id.toString()}`);
+        await carregarDados(); // Atualiza a tela após deletar
       } catch (err) {
-        alert("Erro ao deletar pessoa.");
+        console.error("Erro detalhado ao deletar:", err);
+        if (err.response) {
+          alert(`Erro do servidor (${err.response.status}): ${err.response.data || 'Não foi possível deletar.'}`);
+        } else {
+          alert("Erro de rede ao deletar pessoa. Verifique o console.");
+        }
       }
     }
   };
