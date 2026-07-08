@@ -25,7 +25,7 @@ function App() {
     // 1. Busca Pessoas
     try {
       const resPessoas = await axios.get(`${API_URL}/pessoas`);
-      setPessoas(resPessoas.data);
+      setPessoas(Array.isArray(resPessoas.data) ? resPessoas.data : []);
     } catch (error) {
       console.error("Erro ao buscar pessoas:", error);
     }
@@ -33,7 +33,7 @@ function App() {
     // 2. Busca Transações
     try {
       const resTransacoes = await axios.get(`${API_URL}/transacoes`);
-      setTransacoes(resTransacoes.data);
+      setTransacoes(Array.isArray(resTransacoes.data) ? resTransacoes.data : []);
     } catch (error) {
       console.error("Erro ao buscar transações:", error);
     }
@@ -41,7 +41,14 @@ function App() {
     // 3. Busca Relatório de Totais
     try {
       const resTotais = await axios.get(`${API_URL}/pessoas/totais`);
-      setRelatorio(resTotais.data);
+      if (resTotais.data) {
+        setRelatorio({
+          detalhesPorPessoa: resTotais.data.detalhesPorPessoa || [],
+          totalGeralReceitas: resTotais.data.totalGeralReceitas || 0,
+          totalGeralDespesas: resTotais.data.totalGeralDespesas || 0,
+          saldoLiquidoGeral: resTotais.data.saldoLiquidoGeral || 0
+        });
+      }
     } catch (error) {
       console.error("Erro ao buscar relatório de totais:", error);
     }
@@ -64,7 +71,7 @@ function App() {
       });
       setNomePessoa('');
       setIdadePessoa('');
-      carregarDados(); // Atualiza a tela
+      await carregarDados(); // Atualiza a tela
     } catch (err) {
       alert("Erro ao cadastrar pessoa.");
     }
@@ -86,7 +93,7 @@ function App() {
       });
       setDescricaoTransacao('');
       setValorTransacao('');
-      carregarDados(); // Atualiza a tela e os relatórios automaticamente
+      await carregarDados(); // Atualiza a tela e os relatórios automaticamente
     } catch (err) {
       console.error("Erro completo da requisição:", err);
       if (err.response && err.response.data) {
@@ -102,7 +109,7 @@ function App() {
     if (confirm("Tem certeza que deseja deletar esta pessoa? Todas as transações dela serão apagadas!")) {
       try {
         await axios.delete(`${API_URL}/pessoas/${id}`);
-        carregarDados();
+        await carregarDados();
       } catch (err) {
         alert("Erro ao deletar pessoa.");
       }
@@ -199,10 +206,10 @@ function App() {
             {transacoes.map(t => (
               <tr key={t.id}>
                 <td>{t.descricao}</td>
-                <td>R$ {t.valor.toFixed(2)}</td>
+                <td>R$ {(t.valor || 0).toFixed(2)}</td>
                 <td>
-                  <span className={`badge ${t.tipo === 0 ? 'badge-receita' : 'badge-despesa'}`}>
-                    {t.tipo === 0 ? 'RECEITA' : 'DESPESA'}
+                  <span className={`badge ${Number(t.tipo) === 0 ? 'badge-receita' : 'badge-despesa'}`}>
+                    {Number(t.tipo) === 0 ? 'RECEITA' : 'DESPESA'}
                   </span>
                 </td>
               </tr>
@@ -227,10 +234,10 @@ function App() {
             {relatorio.detalhesPorPessoa && relatorio.detalhesPorPessoa.map(r => (
               <tr key={r.pessoaId} style={{ borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
                 <td>{r.nome}</td>
-                <td style={{ color: '#2ecc71' }}>R$ {r.totalReceitas.toFixed(2)}</td>
-                <td style={{ color: '#e74c3c' }}>R$ {r.totalDespesas.toFixed(2)}</td>
-                <td style={{ fontWeight: 'bold', color: r.saldo >= 0 ? '#2ecc71' : '#e74c3c' }}>
-                  R$ {r.saldo.toFixed(2)}
+                <td style={{ color: '#2ecc71' }}>R$ {(r.totalReceitas || 0).toFixed(2)}</td>
+                <td style={{ color: '#e74c3c' }}>R$ {(r.totalDespesas || 0).toFixed(2)}</td>
+                <td style={{ fontWeight: 'bold', color: (r.saldo || 0) >= 0 ? '#2ecc71' : '#e74c3c' }}>
+                  R$ {(r.saldo || 0).toFixed(2)}
                 </td>
               </tr>
             ))}
@@ -241,19 +248,19 @@ function App() {
           <div className="total-item">
             <h3>Total Receitas da Casa</h3>
             <p style={{ color: '#2ecc71', fontSize: '24px', fontWeight: 'bold' }}>
-              R$ {relatorio.totalGeralReceitas.toFixed(2)}
+              R$ {(relatorio.totalGeralReceitas || 0).toFixed(2)}
             </p>
           </div>
           <div className="total-item">
             <h3>Total Despesas da Casa</h3>
             <p style={{ color: '#e74c3c', fontSize: '24px', fontWeight: 'bold' }}>
-              R$ {relatorio.totalGeralDespesas.toFixed(2)}
+              R$ {(relatorio.totalGeralDespesas || 0).toFixed(2)}
             </p>
           </div>
           <div className="total-item" style={{ background: 'rgba(255,255,255,0.2)' }}>
             <h3>Saldo Líquido Geral</h3>
-            <p style={{ color: relatorio.saldoLiquidoGeral >= 0 ? '#2ecc71' : '#e74c3c', fontSize: '24px', fontWeight: 'bold' }}>
-              R$ {relatorio.saldoLiquidoGeral.toFixed(2)}
+            <p style={{ color: (relatorio.saldoLiquidoGeral || 0) >= 0 ? '#2ecc71' : '#e74c3c', fontSize: '24px', fontWeight: 'bold' }}>
+              R$ {(relatorio.saldoLiquidoGeral || 0).toFixed(2)}
             </p>
           </div>
         </div>
