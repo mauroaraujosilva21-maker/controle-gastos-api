@@ -14,12 +14,12 @@ namespace ControleGastos.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Força o relacionamento perfeito sem colunas fantasmas
-            modelBuilder.Entity<Transacao>()
-                .HasOne(t => t.Pessoa)
-                .WithMany(p => p.Transacoes)
+            // Configura o relacionamento: Uma Pessoa tem Muitas Transações
+            modelBuilder.Entity<Pessoa>()
+                .HasMany(p => p.Transacoes)
+                .WithOne(t => t.Pessoa)
                 .HasForeignKey(t => t.PessoaId)
-                .OnDelete(DeleteBehavior.Cascade); // Se deletar a pessoa, apaga as transações dela
-        }
-    }
-}
+                .OnDelete(DeleteBehavior.Cascade); // Deleta em cascata automaticamente
+        } 
+    } // 👈 Chave que faltava para fechar a classe
+} // 👈 Chave que faltava para fechar o namespace
