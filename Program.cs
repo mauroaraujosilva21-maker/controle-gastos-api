@@ -40,6 +40,6 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated(); 
+    // dbContext.Database.EnsureCreated(); <-- COMENTE OU APAGUE ESTA LINHA
 }
 app.Run();
