@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ControleGastos.Data;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ControleGastos.DTOs;
@@ -27,9 +28,9 @@ namespace ControleGastos.Controllers
             return Ok(pessoas);
         }
 
-        // 2. BUSCAR PESSOA POR ID
+        // 2. BUSCAR PESSOA POR ID (Corrigido para Guid)
         [HttpGet("{id}")]
-        public async Task<IActionResult> ObterPorId(int id)
+        public async Task<IActionResult> ObterPorId(Guid id)
         {
             var p = await _context.Pessoas.FindAsync(id);
             if (p == null) return NotFound("Pessoa não encontrada.");
@@ -45,7 +46,20 @@ namespace ControleGastos.Controllers
             return CreatedAtAction(nameof(ObterPorId), new { id = novaPessoa.Id }, novaPessoa);
         }
 
-        // 4. REQUISITO: CONSULTA DE TOTAIS
+        // 4. EXCLUIR PESSOA (Com deleção em cascata automática no banco de dados)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Excluir(Guid id)
+        {
+            var pessoa = await _context.Pessoas.FindAsync(id);
+            if (pessoa == null) return NotFound("Pessoa não encontrada.");
+
+            _context.Pessoas.Remove(pessoa);
+            await _context.SaveChangesAsync();
+
+            return NoContent(); // Retorna Status 204 (Sucesso sem conteúdo corpóreo)
+        }
+
+        // 5. REQUISITO: CONSULTA DE TOTAIS
         [HttpGet("totais")]
         public async Task<IActionResult> ObterTotais()
         {
@@ -71,7 +85,7 @@ namespace ControleGastos.Controllers
                 var resumoPessoa = new ResumoPessoaDto
                 {
                     PessoaId = pessoa.Id,
-                    Nome = pessoa.Nome,
+                    Nome = p.Nome,
                     TotalReceitas = totalReceitas,
                     TotalDespesas = totalDespesas
                 };
@@ -84,5 +98,5 @@ namespace ControleGastos.Controllers
 
             return Ok(relatorio);
         }
-    } // Fim da classe PessoasController
-} // Fim do namespace
+    }
+}
