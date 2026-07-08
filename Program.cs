@@ -8,9 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 // ==========================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("VercelPolicy", policy =>
     {
-        policy.AllowAnyOrigin() // Permite qualquer site (Vercel, localhost, etc.)
+        policy.WithOrigins("https://frontend-gamma-one-11.vercel.app")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -35,6 +35,7 @@ app.UseRouting();
 app.UseCors("AllowAll"); // Ativando a política global
 
 app.UseAuthorization();
+app.UseCors("VercelPolicy");
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
