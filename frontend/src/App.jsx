@@ -35,18 +35,22 @@ function App() {
       const resTransacoes = await axios.get(`${API_URL}/transacoes`);
       setTransacoes(Array.isArray(resTransacoes.data) ? resTransacoes.data : []);
     } catch (error) {
-      console.error("Erro ao buscar transações:", error);
+      console.error("Erro ao buscar transactions:", error);
     }
 
     // 3. Busca Relatório de Totais
     try {
       const resTotais = await axios.get(`${API_URL}/pessoas/totais`);
       if (resTotais.data) {
+        // Calcula o Saldo Líquido Geral dinamicamente baseando-se nas receitas e despesas da casa
+        const receitasGerais = resTotais.data.totalGeralReceitas || 0;
+        const despesasGerais = resTotais.data.totalGeralDespesas || 0;
+        
         setRelatorio({
           detalhesPorPessoa: resTotais.data.detalhesPorPessoa || [],
-          totalGeralReceitas: resTotais.data.totalGeralReceitas || 0,
-          totalGeralDespesas: resTotais.data.totalGeralDespesas || 0,
-          saldoLiquidoGeral: resTotais.data.saldoLiquidoGeral || 0
+          totalGeralReceitas: receitasGerais,
+          totalGeralDespesas: despesasGerais,
+          saldoLiquidoGeral: receitasGerais - despesasGerais
         });
       }
     } catch (error) {
@@ -104,28 +108,18 @@ function App() {
     }
   };
 
- // Handler para deletar uma pessoa (Tentativa com parâmetro de Query string)
+  // Handler para deletar uma pessoa (Rota padrão limpa sincronizada com o C#)
   const handleDeletarPessoa = async (id) => {
     if (!id) return alert("ID da pessoa não encontrado!");
     
     if (confirm("Tem certeza que deseja deletar esta pessoa? Todas as transações dela serão apagadas!")) {
       try {
-        // Tenta enviar no formato /api/pessoas?id=GUID
-        await axios.delete(`${API_URL}/pessoas`, {
-          params: { id: id.toString() }
-        });
-        await carregarDados(); // Atualiza a tela
+        // Envia o ID diretamente na URL mapeada pelo [HttpDelete("{id}")] do back-end
+        await axios.delete(`${API_URL}/pessoas/${id}`);
+        await carregarDados(); // Atualiza a tela limpando os registros deletados
       } catch (err) {
-        console.error("Erro na primeira tentativa de deleção, tentando formato alternativo...", err);
-        
-        // Se falhar, tenta o formato padrão /api/pessoas/GUID por desencargo
-        try {
-          await axios.delete(`${API_URL}/pessoas/${id.toString()}`);
-          await carregarDados();
-        } catch (errAlternativo) {
-          console.error("Erro definitivo ao deletar:", errAlternativo);
-          alert(`O servidor respondeu com erro. Verifique os logs do C#.`);
-        }
+        console.error("Erro ao deletar pessoa:", err);
+        alert("Não foi possível deletar a pessoa. Verifique as dependências do servidor.");
       }
     }
   };
@@ -245,16 +239,20 @@ function App() {
             </tr>
           </thead>
           <tbody style={{ color: '#fff' }}>
-            {relatorio.detalhesPorPessoa && relatorio.detalhesPorPessoa.map(r => (
-              <tr key={r.pessoaId} style={{ borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-                <td>{r.nome}</td>
-                <td style={{ color: '#2ecc71' }}>R$ {(r.totalReceitas || 0).toFixed(2)}</td>
-                <td style={{ color: '#e74c3c' }}>R$ {(r.totalDespesas || 0).toFixed(2)}</td>
-                <td style={{ fontWeight: 'bold', color: (r.saldo || 0) >= 0 ? '#2ecc71' : '#e74c3c' }}>
-                  R$ {(r.saldo || 0).toFixed(2)}
-                </td>
-              </tr>
-            ))}
+            {relatorio.detalhesPorPessoa && relatorio.detalhesPorPessoa.map(r => {
+              // Calcula o saldo dinamicamente (Receitas - Despesas) para evitar divergências com o DTO
+              const saldoIndividual = (r.totalReceitas || 0) - (r.totalDespesas || 0);
+              return (
+                <tr key={r.pessoaId} style={{ borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+                  <td>{r.nome}</td>
+                  <td style={{ color: '#2ecc71' }}>R$ {(r.totalReceitas || 0).toFixed(2)}</td>
+                  <td style={{ color: '#e74c3c' }}>R$ {(r.totalDespesas || 0).toFixed(2)}</td>
+                  <td style={{ fontWeight: 'bold', color: saldoIndividual >= 0 ? '#2ecc71' : '#e74c3c' }}>
+                    R$ {saldoIndividual.toFixed(2)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
