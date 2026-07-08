@@ -104,21 +104,27 @@ function App() {
     }
   };
 
-  // Handler para deletar uma pessoa (Garante a deleção em cascata)
+ // Handler para deletar uma pessoa (Tentativa com parâmetro de Query string)
   const handleDeletarPessoa = async (id) => {
     if (!id) return alert("ID da pessoa não encontrado!");
     
     if (confirm("Tem certeza que deseja deletar esta pessoa? Todas as transações dela serão apagadas!")) {
       try {
-        // Envia o ID na rota padrão (Convertendo explicitamente para string se necessário)
-        await axios.delete(`${API_URL}/pessoas/${id.toString()}`);
-        await carregarDados(); // Atualiza a tela após deletar
+        // Tenta enviar no formato /api/pessoas?id=GUID
+        await axios.delete(`${API_URL}/pessoas`, {
+          params: { id: id.toString() }
+        });
+        await carregarDados(); // Atualiza a tela
       } catch (err) {
-        console.error("Erro detalhado ao deletar:", err);
-        if (err.response) {
-          alert(`Erro do servidor (${err.response.status}): ${err.response.data || 'Não foi possível deletar.'}`);
-        } else {
-          alert("Erro de rede ao deletar pessoa. Verifique o console.");
+        console.error("Erro na primeira tentativa de deleção, tentando formato alternativo...", err);
+        
+        // Se falhar, tenta o formato padrão /api/pessoas/GUID por desencargo
+        try {
+          await axios.delete(`${API_URL}/pessoas/${id.toString()}`);
+          await carregarDados();
+        } catch (errAlternativo) {
+          console.error("Erro definitivo ao deletar:", errAlternativo);
+          alert(`O servidor respondeu com erro. Verifique os logs do C#.`);
         }
       }
     }
