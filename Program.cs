@@ -8,9 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 // ==========================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReact", policy =>
+    options.AddPolicy("AllowVercel", policy =>
     {
-        policy.AllowAnyOrigin() 
+        policy.WithOrigins("https://frontend-gamma-one-11.vercel.app") // URL exata da Vercel
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -29,8 +29,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Ativa a permissão do CORS antes dos mapeamentos
-app.UseCors("AllowReact"); 
+// ATENÇÃO: UseCors DEVE vir obrigatoriamente ANTES de UseAuthorization e MapControllers
+app.UseCors("AllowVercel");
 
 app.UseAuthorization();
 app.MapControllers();
