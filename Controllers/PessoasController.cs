@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ControleGastos.Data;
-using ControleGastos.Models;
-using ControleGastos.DTOs;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ControleGastos.DTOs;
+using ControleGastos.Models;
 
 namespace ControleGastos.Controllers
 {
@@ -21,41 +19,37 @@ namespace ControleGastos.Controllers
             _context = context;
         }
 
-        // 1. REQUISITO: LISTAGEM DE PESSOAS
+        // 1. LISTAR TODAS AS PESSOAS
         [HttpGet]
-        public async Task<IActionResult> Listar()
+        public async Task<IActionResult> ObterTodas()
         {
-            var pessoas = await _context.Pessoas.ToListAsync();
+            var pessoas = await _context.Pessoas.AsNoTracking().ToListAsync();
             return Ok(pessoas);
         }
 
-        // 2. REQUISITO: CRIAÇÃO DE PESSOA
-        [HttpPost]
-        public async Task<IActionResult> Criar([FromBody] Pessoa pessoa)
+        // 2. BUSCAR PESSOA POR ID
+        [HttpGet("{id}")]
+        public async Task<IActionResult> ObterPorId(int id)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            _context.Pessoas.Add(pessoa);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(Listar), new { id = pessoa.Id }, pessoa);
+            var p = await _context.Pessoas.FindAsync(id);
+            if (p == null) return NotFound("Pessoa não encontrada.");
+            return Ok(p);
         }
 
-        // 3. REQUISITO: DELEÇÃO DE PESSOA
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Deletar(Guid id)
+        // 3. CADASTRAR NOVA PESSOA
+        [HttpPost]
+        public async Task<IActionResult> Criar([FromBody] Pessoa novaPessoa)
         {
-            var pessoa = await _context.Pessoas.FindAsync(id);
-            if (pessoa == null) return NotFound("Pessoa não encontrada.");
-
-            _context.Pessoas.Remove(pessoa);
+            _context.Pessoas.Add(novaPessoa);
             await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(ObterPorId), new { id = novaPessoa.Id }, novaPessoa);
+        }
 
-            // 4. REQUISITO: CONSULTA DE TOTAIS
+        // 4. REQUISITO: CONSULTA DE TOTAIS
         [HttpGet("totais")]
         public async Task<IActionResult> ObterTotais()
         {
-            // Busca apenas os dados necessários de forma plana, desativando o rastreamento (AsNoTracking)
+            // Busca apenas os dados necessários de forma plana, desativando o rastreamento
             var pessoasComTransacoes = await _context.Pessoas
                 .AsNoTracking()
                 .Select(p => new
@@ -90,8 +84,5 @@ namespace ControleGastos.Controllers
 
             return Ok(relatorio);
         }
-
-            return Ok(relatorio);
-        }
-    }
-}
+    } // Fim da classe PessoasController
+} // Fim do namespace
