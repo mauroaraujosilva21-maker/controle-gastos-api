@@ -51,30 +51,33 @@ namespace ControleGastos.Controllers
             _context.Pessoas.Remove(pessoa);
             await _context.SaveChangesAsync();
 
-            return NoContent();
-        }
-
-        // 4. REQUISITO: CONSULTA DE TOTAIS
+            // 4. REQUISITO: CONSULTA DE TOTAIS
         [HttpGet("totais")]
         public async Task<IActionResult> ObterTotais()
         {
-            var pessoas = await _context.Pessoas
-                .Include(p => p.Transacoes)
+            // Busca apenas os dados necessários de forma plana, desativando o rastreamento (AsNoTracking)
+            var pessoasComTransacoes = await _context.Pessoas
+                .AsNoTracking()
+                .Select(p => new
+                {
+                    p.Id,
+                    Nome = p.Nome ?? "",
+                    Transacoes = p.Transacoes.Select(t => new { t.Tipo, t.Valor }).ToList()
+                })
                 .ToListAsync();
 
             var relatorio = new RelatorioTotaisDto();
 
-            foreach (var pessoa in pessoas)
+            foreach (var pessoa in pessoasComTransacoes)
             {
-                var transacoesDaPessoa = pessoa.Transacoes ?? new List<Transacao>();
-
-                var totalReceitas = transacoesDaPessoa.Where(t => t.Tipo == TipoTransacao.Receita).Sum(t => t.Valor);
-                var totalDespesas = transacoesDaPessoa.Where(t => t.Tipo == TipoTransacao.Despesa).Sum(t => t.Valor);
+                // Calcula os totais com base na projeção limpa
+                var totalReceitas = pessoa.Transacoes.Where(t => t.Tipo == TipoTransacao.Receita).Sum(t => t.Valor);
+                var totalDespesas = pessoa.Transacoes.Where(t => t.Tipo == TipoTransacao.Despesa).Sum(t => t.Valor);
 
                 var resumoPessoa = new ResumoPessoaDto
                 {
                     PessoaId = pessoa.Id,
-                    Nome = pessoa.Nome ?? "",
+                    Nome = pessoa.Nome,
                     TotalReceitas = totalReceitas,
                     TotalDespesas = totalDespesas
                 };
@@ -84,6 +87,9 @@ namespace ControleGastos.Controllers
                 relatorio.TotalGeralReceitas += totalReceitas;
                 relatorio.TotalGeralDespesas += totalDespesas;
             }
+
+            return Ok(relatorio);
+        }
 
             return Ok(relatorio);
         }

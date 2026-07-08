@@ -20,18 +20,30 @@ function App() {
   const [valorTransacao, setValorTransacao] = useState('');
   const [tipoTransacao, setTipoTransacao] = useState('0'); // 0 = Receita, 1 = Despesa
 
-  // Função para buscar todos os dados do back-end de uma vez só
+  // Função para buscar os dados de forma independente para evitar travamentos
   const carregarDados = async () => {
+    // 1. Busca Pessoas
     try {
       const resPessoas = await axios.get(`${API_URL}/pessoas`);
-      const resTransacoes = await axios.get(`${API_URL}/transacoes`);
-      const resTotais = await axios.get(`${API_URL}/pessoas/totais`);
-
       setPessoas(resPessoas.data);
+    } catch (error) {
+      console.error("Erro ao buscar pessoas:", error);
+    }
+
+    // 2. Busca Transações
+    try {
+      const resTransacoes = await axios.get(`${API_URL}/transacoes`);
       setTransacoes(resTransacoes.data);
+    } catch (error) {
+      console.error("Erro ao buscar transações:", error);
+    }
+
+    // 3. Busca Relatório de Totais
+    try {
+      const resTotais = await axios.get(`${API_URL}/pessoas/totais`);
       setRelatorio(resTotais.data);
     } catch (error) {
-      console.error("Erro ao conectar com o back-end:", error);
+      console.error("Erro ao buscar relatório de totais:", error);
     }
   };
 
