@@ -3,8 +3,7 @@ import axios from 'axios';
 import './App.css';
 
 // Configuração da URL padrão do seu back-end C#
-// Nota: Verifique no seu arquivo launchSettings.json ou no terminal do C# se a porta é 5000 ou outra.
-const API_URL = 'http://localhost:5078/api';
+const API_URL = 'https://controle-gastos-api-66b5.onrender.com/api';
 
 function App() {
   // Estados para armazenar os dados vindos do banco
@@ -66,22 +65,22 @@ function App() {
       return alert("Preencha todos os campos da transação!");
     }
 
-   try {
-  await axios.post(`${API_URL}/transacoes`, {
-    descricao: descricaoTransacao,
-    valor: parseFloat(valorTransacao),
-    tipo: parseInt(tipoTransacao), // <--- REMOVA A INVERSÃO MÁGICA. DEIXE APENAS ISSO!
-    pessoaId: pessoaIdTransacao
-  });
-  setDescricaoTransacao('');
+    try {
+      await axios.post(`${API_URL}/transacoes`, {
+        descricao: descricaoTransacao,
+        valor: parseFloat(valorTransacao),
+        tipo: Number(tipoTransacao), // Garante o formato numérico correto para o enum C#
+        pessoaId: pessoaIdTransacao
+      });
+      setDescricaoTransacao('');
       setValorTransacao('');
       carregarDados(); // Atualiza a tela e os relatórios automaticamente
     } catch (err) {
-      // Aqui capturamos o erro enviado pelo C# (como a validação de menor de 18 anos)
+      console.error("Erro completo da requisição:", err);
       if (err.response && err.response.data) {
         alert(`Erro: ${err.response.data}`);
       } else {
-        alert("Erro ao cadastrar transação.");
+        alert("Erro ao cadastrar transação. Verifique o console.");
       }
     }
   };
@@ -213,7 +212,7 @@ function App() {
             </tr>
           </thead>
           <tbody style={{ color: '#fff' }}>
-            {relatorio.detalhesPorPessoa.map(r => (
+            {relatorio.detalhesPorPessoa && relatorio.detalhesPorPessoa.map(r => (
               <tr key={r.pessoaId} style={{ borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
                 <td>{r.nome}</td>
                 <td style={{ color: '#2ecc71' }}>R$ {r.totalReceitas.toFixed(2)}</td>

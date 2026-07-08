@@ -16,9 +16,14 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configuração dos Controllers com as opções de JSON ajustadas
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
+    // Ignora ciclos de referência para evitar loops infinitos
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    
+    // Força o padrão camelCase que remove acentos e resolve o problema das "transações" no React
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 });
 
 // Configuração do Swagger (Adicionando os serviços necessários)
