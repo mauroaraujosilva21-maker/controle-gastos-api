@@ -8,9 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 // ==========================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVercel", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("https://frontend-gamma-one-11.vercel.app") // URL exata da Vercel
+        policy.AllowAnyOrigin() // Permite qualquer site (Vercel, localhost, etc.)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -29,8 +29,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// ATENÇÃO: UseCors DEVE vir obrigatoriamente ANTES de UseAuthorization e MapControllers
-app.UseCors("AllowVercel");
+// Tem que ser a PRIMEIRA coisa depois do Build!
+app.UseRouting(); 
+
+app.UseCors("AllowAll"); // Ativando a política global
 
 app.UseAuthorization();
 app.MapControllers();
