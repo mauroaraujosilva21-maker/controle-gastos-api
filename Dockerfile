@@ -13,7 +13,7 @@ RUN dotnet publish "ControleGastos.csproj" -c Release -o /app/publish /p:UseAppH
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-# 🔥 Instala a biblioteca de segurança necessária para o driver do PostgreSQL
+# Instala a biblioteca de segurança necessária para o driver do PostgreSQL
 USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libgssapi-krb5-2 && \
