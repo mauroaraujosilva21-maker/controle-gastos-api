@@ -85,7 +85,7 @@ namespace ControleGastos.Controllers
                 var resumoPessoa = new ResumoPessoaDto
                 {
                     PessoaId = pessoa.Id,
-                    Nome = p.Nome,
+                    Nome = pessoa.Nome,
                     TotalReceitas = totalReceitas,
                     TotalDespesas = totalDespesas
                 };
